@@ -3,16 +3,28 @@ package org.snomed.util;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
+import org.snomed.ApplicationException;
 
 public class GlobalUtils {
 	
 	public static final String LINE_DELIMITER = "\r\n";
 	public static final String QUOTE = "\"";
+	public static final String BETA_PREFIX = "x";
 	
 	public static void print(String msg) {
 		print(msg, true);
@@ -26,35 +38,19 @@ public class GlobalUtils {
 		}
 	}
 	
-	public static void writeToFile(File outputFile, String line) {
-		try(	OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(outputFile, true), StandardCharsets.UTF_8);
-				BufferedWriter bw = new BufferedWriter(osw);
-				PrintWriter out = new PrintWriter(bw))
-		{
-			out.println(line);
-		} catch (Exception e) {
-			print ("Unable to output report line: " + line + " due to " + e.getMessage());
+	public static PrintWriter prepareFileToWrite(File outputFile) throws ApplicationException {
+		try {
+			OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(outputFile, true), StandardCharsets.UTF_8);
+			BufferedWriter bw = new BufferedWriter(osw);
+			return new PrintWriter(bw);
+		} catch (FileNotFoundException e) {
+			throw new ApplicationException ("Unable to prepare " + outputFile + " for writing.", e);
 		}
 	}
 	
-	public static void outputToFile(String fileName, String[] columns, String delimiter, boolean quoteFields) throws IOException {
-		File file = ensureFileExists(fileName);
-		try(	OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8);
-				BufferedWriter bw = new BufferedWriter(osw);
-				PrintWriter out = new PrintWriter(bw))
-		{
-			StringBuffer line = new StringBuffer();
-			for (int x=0; x<columns.length; x++) {
-				if (x > 0) {
-					line.append(delimiter);
-				}
-				line.append(quoteFields?QUOTE:"");
-				line.append(columns[x]==null?"":columns[x]);
-				line.append(quoteFields?QUOTE:"");
-			}
-			out.print(line.toString() + LINE_DELIMITER);
-		} catch (Exception e) {
-			print ("Unable to output to " + file.getAbsolutePath() + " due to " + e.getMessage());
+	public static synchronized void writeToFile(PrintWriter out, Collection<? extends Object> lines) {
+		for (Object line : lines) {
+			out.println(line.toString());
 		}
 	}
 
@@ -101,5 +97,98 @@ public class GlobalUtils {
 			file = new File(proposedName);
 		}
 		return file;
+	}
+	
+	public static void unzipFlat(File archive, File targetDir, String[] matchArray) throws ApplicationException {
+
+		if (!targetDir.exists() || !targetDir.isDirectory()) {
+			throw new ApplicationException(targetDir + " is not a viable directory in which to extract archive");
+		}
+		try {
+			ZipInputStream zis = new ZipInputStream(new FileInputStream(archive));
+			ZipEntry ze = zis.getNextEntry();
+			try {
+				while (ze != null) {
+					if (!ze.isDirectory()) {
+						Path p = Paths.get(ze.getName());
+						String extractedFilename = p.getFileName().toString();
+						for (String matchStr : matchArray) {
+							if (matchStr == null || extractedFilename.contains(matchStr)) {
+								//If the filename is a beta file with x prefix, remove the prefix
+								if (extractedFilename.startsWith(BETA_PREFIX)) {
+									extractedFilename = extractedFilename.substring(1);
+								}
+								File extractedFile = new File(targetDir, extractedFilename);
+								print(".", false);
+								Files.copy(zis, extractedFile.toPath());
+							}
+						}
+					}
+					ze = zis.getNextEntry();
+				}
+			} finally {
+				zis.closeEntry();
+				zis.close();
+			}
+		} catch (IOException e) {
+			throw new ApplicationException("Failed to expand archive " + archive.getName(), e);
+		}
+	}
+	
+	public static void delete(File f) {
+		try {
+			if (f != null && f.exists()) {
+				if (f.isDirectory()) {
+					for (File c : f.listFiles())
+						delete(c);
+				}
+				if (!f.delete()) {
+					print("Failed to delete file: " + f);
+				}
+			}
+		} catch (Exception e) {
+			print ("Exception while deleting " + f + e.getMessage());
+		}
+	}
+	
+
+	public static void createArchive(File exportLocation) throws ApplicationException {
+		try {
+			// The zip filename will be the name of the first thing in the zip location
+			String zipFileName = exportLocation.listFiles()[0].getName() + ".zip";
+			int fileNameModifier = 1;
+			while (new File(zipFileName).exists()) {
+				zipFileName = exportLocation.listFiles()[0].getName() + "_" + fileNameModifier++ + ".zip";
+			}
+			ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
+			String rootLocation = exportLocation.getAbsolutePath() + File.separator;
+			print("Creating archive : " + zipFileName + " from files found in " + rootLocation);
+			addDir(rootLocation, exportLocation, out);
+			out.close();
+		} catch (IOException e) {
+			throw new ApplicationException("Failed to create revised archive from " + exportLocation, e);
+		}
+	}
+
+	public static void addDir(String rootLocation, File dirObj, ZipOutputStream out) throws IOException {
+		File[] files = dirObj.listFiles();
+		byte[] tmpBuf = new byte[1024];
+
+		for (int i = 0; i < files.length; i++) {
+			if (files[i].isDirectory()) {
+				addDir(rootLocation, files[i], out);
+				continue;
+			}
+			FileInputStream in = new FileInputStream(files[i].getAbsolutePath());
+			String relativePath = files[i].getAbsolutePath().substring(rootLocation.length());
+			print(" Adding: " + relativePath);
+			out.putNextEntry(new ZipEntry(relativePath));
+			int len;
+			while ((len = in.read(tmpBuf)) > 0) {
+				out.write(tmpBuf, 0, len);
+			}
+			out.closeEntry();
+			in.close();
+		}
 	}
 }
