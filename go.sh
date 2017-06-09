@@ -19,16 +19,12 @@ do
 	esac
 done
 
-host="127.0.0.1:3306"
-database="us_20170301"
-username="root"
-password="\"\""
 effectiveTime="20170301"
-dbParams="${host} ${database} ${username} ${password} "
+originalArchive="/Users/Peter/Backup/SnomedCT_USEditionRF2_Production_20170301T120000.zip"
 negativeDeltaArchive="/Users/Peter/tmp/SnomedCT_RF2Release_USNegativeDelta_20170601.zip"
-
-memParams="-Xms3g -Xmx8g"
+edition="US1000124"
+memParams="-Xms6g -Xmx10g"
 set -x;
-java -jar ${memParams} ${debugParams} target/snomed-deletion.jar ${dbParams} ${negativeDeltaArchive} ${effectiveTime}
+java -jar ${memParams} ${debugParams} target/snomed-deletion.jar ${originalArchive} ${negativeDeltaArchive} ${effectiveTime} ${edition}
 
 
