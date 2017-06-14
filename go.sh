@@ -19,9 +19,9 @@ do
 	esac
 done
 
-effectiveTime="20170301"
+effectiveTime="20170131,20170301"
 originalArchive="/Users/Peter/Backup/SnomedCT_USEditionRF2_Production_20170301T120000.zip"
-negativeDeltaArchive="/Users/Peter/tmp/SnomedCT_RF2Release_USNegativeDelta_20170601.zip"
+negativeDeltaArchive="/Users/Peter/tmp/SnomedCT_RF2Release_USNegativeDelta_20170601_2.zip"
 edition="US1000124"
 memParams="-Xms6g -Xmx10g"
 set -x;

@@ -15,7 +15,7 @@ public class SnomedTable implements SnomedConstants {
 		SnomedTables.add(new SnomedTable("description","sct2_Description_TYPE",  
 				termDir + "sct2_Description_TYPE-LNG_EDITION_DATE.txt",
 				"id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId"));
-		SnomedTables.add(new SnomedTable("textdefinition","sct2_TextDefinition_Snapshot", 
+		SnomedTables.add(new SnomedTable("textdefinition","sct2_TextDefinition_TYPE", 
 				termDir + "sct2_TextDefinition_Snapshot-LNG_EDITION_DATE.txt",
 				"id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId"));
 		SnomedTables.add(new SnomedTable("langrefset","der2_cRefset_LanguageTYPE", 
@@ -31,7 +31,7 @@ public class SnomedTable implements SnomedConstants {
 				refDir + "Content/der2_Refset_SimpleTYPE_EDITION_DATE.txt",
 				"id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId"));
 		SnomedTables.add(new SnomedTable("associationrefset","der2_cRefset_AssociationReferenceTYPE",  
-				refDir + "Content/der2_cRefset_AssociationReferenceSnapshot_EDITION_DATE.txt",
+				refDir + "Content/der2_cRefset_AssociationReferenceTYPE_EDITION_DATE.txt",
 				"id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId\ttargetComponentId"));
 		SnomedTables.add(new SnomedTable("attributevaluerefset","der2_cRefset_AttributeValueTYPE", 
 				refDir + "Content/der2_cRefset_AttributeValueTYPE_EDITION_DATE.txt",
@@ -45,7 +45,6 @@ public class SnomedTable implements SnomedConstants {
 		SnomedTables.add(new SnomedTable("descriptionType", "der2_ciRefset_DescriptionTypeTYPE",
 				refDir + "Metadata/der2_ciRefset_DescriptionTypeTYPE_EDITION_DATE.txt",
 				"id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId\tdescriptionFormat\tdescriptionLength"));
-		
 		SnomedTables.add(new SnomedTable("simplemaprefset","der2_sRefset_SimpleMapTYPE", 
 				refDir + "Map/der2_sRefset_SimpleMapTYPE_EDITION_DATE.txt",
 				"id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId\tmapTarget"));
@@ -79,10 +78,11 @@ public class SnomedTable implements SnomedConstants {
 		return fileHeader;
 	}
 
-	public String getFilename(String edition, String targetEffectiveTime,
+	public String getFilename(String edition, String languageCode, String targetEffectiveTime,
 			TableType tableType) {
 		return filenameTemplate.replace("EDITION", edition).
 				replace("DATE", targetEffectiveTime).
+				replace("LNG", languageCode).
 				replaceAll(TYPE, getFileType(tableType));
 	}
 	
