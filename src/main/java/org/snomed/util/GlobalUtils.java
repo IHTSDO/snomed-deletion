@@ -50,7 +50,7 @@ public class GlobalUtils {
 	
 	public static synchronized void writeToFile(PrintWriter out, Collection<? extends Object> lines) {
 		for (Object line : lines) {
-			out.println(line.toString());
+			out.print(line.toString() + LINE_DELIMITER);
 		}
 	}
 
@@ -154,6 +154,10 @@ public class GlobalUtils {
 
 	public static void createArchive(File exportLocation) throws ApplicationException {
 		try {
+			if (exportLocation.listFiles().length == 0) {
+				print ("No files found to create archive at: " + exportLocation);
+				return;
+			}
 			// The zip filename will be the name of the first thing in the zip location
 			String zipFileName = exportLocation.listFiles()[0].getName() + ".zip";
 			int fileNameModifier = 1;

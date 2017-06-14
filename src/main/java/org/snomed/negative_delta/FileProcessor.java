@@ -18,7 +18,8 @@ public class FileProcessor implements Runnable, SnomedConstants {
 	private Rf2File fullFile;
 	private File revisedReleaseLocation;
 	private File revisedDeletedStateLocation;
-	private Long targetEffectiveTime;
+	private String[] targetEffectiveTimes;
+	private Long maxTargetEffectiveTime = null;
 	private SnomedTable table;
 	NegativeDeltaProcessor parent;
 	String edition;
@@ -31,7 +32,7 @@ public class FileProcessor implements Runnable, SnomedConstants {
 			File fullFile, 
 			File revisedReleaseLocation, 
 			File revisedDeletedStateLocation, 
-			Long targetEffectiveTime,
+			String[] targetEffectiveTimes,
 			NegativeDeltaProcessor parent,
 			String edition) {
 		FileProcessor fp = new FileProcessor();
@@ -39,7 +40,7 @@ public class FileProcessor implements Runnable, SnomedConstants {
 		fp.fullFile = new Rf2File(fullFile);
 		fp.revisedReleaseLocation = revisedReleaseLocation;
 		fp.revisedDeletedStateLocation = revisedDeletedStateLocation;
-		fp.targetEffectiveTime = targetEffectiveTime;
+		fp.targetEffectiveTimes = targetEffectiveTimes;
 		fp.table = identifyTable(fullFile.getName(), TableType.FULL);
 		fp.parent = parent;
 		if (fp.table == null) {
@@ -103,7 +104,7 @@ public class FileProcessor implements Runnable, SnomedConstants {
 		//Loop through the full file and remove effective times > targetEffectiveTime
 		for (String id : fullFile.getComponents()) {
 			for(Rf2Row fullRow : fullFile.getComponentHistory(id).descendingSet()) {
-				if (fullRow.getEffectiveTime() > targetEffectiveTime) {
+				if (fullRow.getEffectiveTime() > getMaxTargetEffectiveTime()) {
 					fullFile.removeRow(id, fullRow);
 				}
 			}
@@ -117,7 +118,7 @@ public class FileProcessor implements Runnable, SnomedConstants {
 
 	private void outputSnapshot() throws ApplicationException {
 		PrintWriter snapOutput = prepareFile(revisedReleaseLocation, TableType.SNAPSHOT);
-		export(allComponents, snapOutput, TableType.FULL);
+		export(allComponents, snapOutput, TableType.SNAPSHOT);
 	}
 
 	private void outputDelta() throws ApplicationException {
@@ -126,7 +127,7 @@ public class FileProcessor implements Runnable, SnomedConstants {
 	}
 	
 	private void outputNewStateOfDeletedComponents() throws ApplicationException {
-		PrintWriter snapDeletedOutput = prepareFile(revisedDeletedStateLocation, TableType.SNAPSHOT);
+		PrintWriter snapDeletedOutput = prepareFile(revisedDeletedStateLocation, TableType.DELTA);
 		Set<String> affectedComponents = negativeDelta.getComponents();
 		if (affectedComponents.size() > 0) {
 			print("New state calculated in " + table.getTableName());
@@ -147,7 +148,7 @@ public class FileProcessor implements Runnable, SnomedConstants {
 	
 	private PrintWriter prepareFile(File exportLocation, TableType tableType) throws ApplicationException {
 		try {
-			String fileName = table.getFilename(edition, targetEffectiveTime.toString(), tableType);
+			String fileName = table.getFilename(edition, "en", getMaxTargetEffectiveTime().toString(), tableType);
 			File outputFile = new File (exportLocation, fileName);
 			print ("Outputting to " + outputFile);
 			GlobalUtils.ensureFileExists(outputFile.getAbsolutePath());
@@ -173,14 +174,24 @@ public class FileProcessor implements Runnable, SnomedConstants {
 					checkForAmbiguity(id);
 					GlobalUtils.writeToFile(out,Collections.singletonList(rowStr));
 					break;
-				case DELTA : //Output the most recent row IF it has the target effective Time
-					Rf2Row row = fullFile.getComponentHistory(id).descendingSet().first();
-					if (row.getEffectiveTime() == targetEffectiveTime) {
-						GlobalUtils.writeToFile(out,Collections.singletonList(row.toString()));
+				case DELTA : //Output rows that are of the target effective time (that of the core, or national edition)
+					for (Rf2Row row : fullFile.getComponentHistory(id).descendingSet()) {
+						if (isTargetEffectiveTime(row.getEffectiveTime())) {
+							GlobalUtils.writeToFile(out,Collections.singletonList(row.toString()));
+						}
 					}
 			}
 		}
 		out.close();
+	}
+
+	private boolean isTargetEffectiveTime(Long effectiveTime) {
+		for (String targetEffectiveTime : targetEffectiveTimes) {
+			if (targetEffectiveTime.equals(effectiveTime.toString())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	//Check to see if the most recent state is ambiguous ie two rows for the same effectiveTime
@@ -193,5 +204,17 @@ public class FileProcessor implements Runnable, SnomedConstants {
 				print ("** Ambiguity in " + fullFile + ": " + first.toString());
 			}
 		}
+	}
+	
+	Long getMaxTargetEffectiveTime() {
+		if (maxTargetEffectiveTime == null) {
+			for (String effectiveTimeStr : targetEffectiveTimes) {
+				Long effectiveTime = Long.parseLong(effectiveTimeStr);
+				if (maxTargetEffectiveTime == null || effectiveTime > maxTargetEffectiveTime) {
+					maxTargetEffectiveTime = effectiveTime;
+				}
+			}
+		}
+		return maxTargetEffectiveTime;
 	}
 }

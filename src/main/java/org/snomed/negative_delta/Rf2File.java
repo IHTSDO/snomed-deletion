@@ -19,6 +19,7 @@ public class Rf2File implements SnomedConstants{
 	//Map of row items per identifier
 	private Map<String, TreeSet<Rf2Row>> rows = new HashMap<String, TreeSet<Rf2Row>>();
 	private File file;
+	public static int MIN_LINE_LENGTH = 2;
 	
 	public Rf2File (File file) {
 		this.file = file;
@@ -30,7 +31,7 @@ public class Rf2File implements SnomedConstants{
 				List<String> lines = Files.readLines(file, Charsets.UTF_8);
 				boolean isHeaderRow = true;
 				for (String line : lines) {
-					if (!isHeaderRow) {
+					if (!isHeaderRow && line.length() > MIN_LINE_LENGTH) {
 						Rf2Row row = new Rf2Row(line, isDeletion);
 						String id = row.getId();
 						//Have we seen a row for this id before?

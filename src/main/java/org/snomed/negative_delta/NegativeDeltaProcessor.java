@@ -22,7 +22,8 @@ public class NegativeDeltaProcessor implements SnomedConstants {
 	File revisedReleaseRoot;
 	File revisedReleaseLocation;
 
-	String targetEffectiveTime;
+	String[] targetEffectiveTimes;
+	Long maxTargetEffectiveTime;
 	String edition = "INT";
 	private static int MAX_THREADS = 4;
 	
@@ -76,19 +77,15 @@ public class NegativeDeltaProcessor implements SnomedConstants {
 			System.exit(-1);
 		}
 		
-		targetEffectiveTime = args[2];
-		long targetEffectiveTimeLong = Long.parseLong(targetEffectiveTime);
-		if (targetEffectiveTime.length() != 8 || targetEffectiveTimeLong < 20010101 || targetEffectiveTimeLong > 20600731) {
-			print ("Invalid target effective time: " +targetEffectiveTime);
-			System.exit(-1);
-		}
+		targetEffectiveTimes= args[2].split(",");
+		getMaxTargetEffectiveTime();
 		edition = args[3];
 		
 		revisedReleaseRoot = Files.createTempDir();
-		revisedReleaseLocation = new File (revisedReleaseRoot, "SnomedCT_" + edition + "_" + targetEffectiveTime);
+		revisedReleaseLocation = new File (revisedReleaseRoot, "SnomedCT_" + edition + "_" + maxTargetEffectiveTime);
 		
 		revisedDeletedStateRoot = Files.createTempDir();
-		revisedDeletedStateLocation = new File (revisedDeletedStateRoot, "SnomedCT_NewState_" + edition + "_" + targetEffectiveTime);
+		revisedDeletedStateLocation = new File (revisedDeletedStateRoot, "SnomedCT_NewState_" + edition + "_" + maxTargetEffectiveTime);
 	}
 
 	private void processNegativeDelta() throws ApplicationException {
@@ -104,7 +101,7 @@ public class NegativeDeltaProcessor implements SnomedConstants {
 						fullFile, 
 						revisedReleaseLocation, 
 						revisedDeletedStateLocation, 
-						Long.parseLong(targetEffectiveTime), 
+						targetEffectiveTimes, 
 						this,
 						edition);
 			}
@@ -177,5 +174,17 @@ public class NegativeDeltaProcessor implements SnomedConstants {
 	
 	public synchronized boolean hasSpareCapacity() {
 		return childProcessesActive.size() < MAX_THREADS;
+	}
+	
+	Long getMaxTargetEffectiveTime() {
+		if (maxTargetEffectiveTime == null) {
+			for (String effectiveTimeStr : targetEffectiveTimes) {
+				Long effectiveTime = Long.parseLong(effectiveTimeStr);
+				if (maxTargetEffectiveTime == null || effectiveTime > maxTargetEffectiveTime) {
+					maxTargetEffectiveTime = effectiveTime;
+				}
+			}
+		}
+		return maxTargetEffectiveTime;
 	}
 }
