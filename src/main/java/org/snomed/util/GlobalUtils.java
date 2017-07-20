@@ -31,7 +31,7 @@ public class GlobalUtils {
 				BufferedWriter bw = new BufferedWriter(osw);
 				PrintWriter out = new PrintWriter(bw))
 		{
-			out.println(line);
+			out.print(line + LINE_DELIMITER);
 		} catch (Exception e) {
 			print ("Unable to output report line: " + line + " due to " + e.getMessage());
 		}
