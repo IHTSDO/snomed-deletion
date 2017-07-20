@@ -16,7 +16,7 @@ public class SnomedTable implements SnomedConstants {
 				termDir + "sct2_Description_TYPE-LNG_EDITION_DATE.txt",
 				"id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId"));
 		SnomedTables.add(new SnomedTable("textdefinition","sct2_TextDefinition_TYPE", 
-				termDir + "sct2_TextDefinition_Snapshot-LNG_EDITION_DATE.txt",
+				termDir + "sct2_TextDefinition_TYPE-LNG_EDITION_DATE.txt",
 				"id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId"));
 		SnomedTables.add(new SnomedTable("langrefset","der2_cRefset_LanguageTYPE", 
 				refDir + "Language/der2_cRefset_LanguageTYPE-LNG_EDITION_DATE.txt",
@@ -48,6 +48,12 @@ public class SnomedTable implements SnomedConstants {
 		SnomedTables.add(new SnomedTable("simplemaprefset","der2_sRefset_SimpleMapTYPE", 
 				refDir + "Map/der2_sRefset_SimpleMapTYPE_EDITION_DATE.txt",
 				"id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId\tmapTarget"));
+		SnomedTables.add(new SnomedTable("moduleDependency", "der2_ssRefset_ModuleDependencyTYPE",
+				refDir + "Metadata/der2_ssRefset_ModuleDependencyTYPE_EDITION_DATE.txt",
+				"id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId\tsourceEffectiveTime\ttargetEffectiveTime"));
+		SnomedTables.add(new SnomedTable("identifier", "sct2_Identifier_TYPE",
+				termDir + "sct2_Identifier_TYPE_EDITION_DATE.txt",
+				"identifierSchemeId\talternateIdentifier\teffectiveTime\tactive\tmoduleId\treferencedComponentId"));
 	}
 	
 	private String tableName;
