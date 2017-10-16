@@ -1,5 +1,5 @@
 # snomed-deletion
-Tool to take a set of SNOMED negative deltas and apply them to create a resulting delta which is the recalculated latest state (ie snapshot) for the targetted components.
+Tool to take a set of SNOMED negative deltas and apply them to create a resulting archive (full/snapshot/delta) plus a delta which is the recalculated latest state (ie snapshot) for just the targeted components which can be imported into a Terminology Server.
 
 ### build:
 
